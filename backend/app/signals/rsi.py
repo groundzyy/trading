@@ -23,8 +23,8 @@ class RSI(SignalMethod):
         avg_gain = gain.ewm(alpha=1.0 / p["period"], min_periods=p["period"], adjust=False).mean()
         avg_loss = loss.ewm(alpha=1.0 / p["period"], min_periods=p["period"], adjust=False).mean()
 
-        rs = avg_gain / avg_loss.replace(0, np.inf)
-        df["rsi"] = 100 - (100 / (1 + rs))
+        rs = avg_gain / avg_loss.replace(0, np.nan)
+        df["rsi"] = np.where(avg_loss == 0, 100.0, 100 - (100 / (1 + rs)))
         return df
 
     def signal(self, data: pd.DataFrame, params: dict | None = None) -> Signal:

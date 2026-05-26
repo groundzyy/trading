@@ -9,7 +9,9 @@ def register(cls: type[SignalMethod]) -> type[SignalMethod]:
 
 
 def get_method(method_id: str) -> SignalMethod:
-    cls = SIGNAL_REGISTRY[method_id]
+    cls = SIGNAL_REGISTRY.get(method_id)
+    if cls is None:
+        raise ValueError(f"Unknown signal method: {method_id}")
     return cls()
 
 

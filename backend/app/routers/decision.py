@@ -58,13 +58,17 @@ async def get_decision(
     indicator_signals = compute_all_indicators(df, method_ids, method_params)
     result = compute_decision(symbol, primary_signal, indicator_signals, weights)
 
+    primary_details = dict(result.primary_signal.details) if result.primary_signal and result.primary_signal.details else {}
+    if not df.empty:
+        primary_details["current_price"] = round(float(df.iloc[-1]["close"]), 2)
+
     return {
         "symbol": symbol,
         "primary": {
             "active": result.primary_active,
             "signal": result.primary_signal.value if result.primary_signal else 0,
             "label": result.primary_signal.label if result.primary_signal else "N/A",
-            "details": result.primary_signal.details if result.primary_signal else None,
+            "details": primary_details,
         },
         "indicators": result.indicator_results,
         "composite_score": result.composite_score,

@@ -109,28 +109,21 @@ class SwingStructure(SignalMethod):
         buy_signal = np.zeros(n, dtype=bool)
         sell_signal = np.zeros(n, dtype=bool)
 
-        last_mth_date = None
-        last_mtl_date = None
+        last_mth_idx = None
+        last_mtl_idx = None
 
         for i in range(n):
             iloc = df.index[i] if not isinstance(df.index, pd.RangeIndex) else i
             if df.at[iloc, "mth"]:
-                last_mth_date = iloc
-            if df.at[iloc, "mtl"]:
-                last_mtl_date = iloc
-                if last_mth_date is not None:
-                    buy_signal[i] = True
-
-        last_mtl_date = None
-        last_mth_date = None
-        for i in range(n):
-            iloc = df.index[i] if not isinstance(df.index, pd.RangeIndex) else i
-            if df.at[iloc, "mtl"]:
-                last_mtl_date = iloc
-            if df.at[iloc, "mth"]:
-                last_mth_date = iloc
-                if last_mtl_date is not None:
+                last_mth_idx = i
+                if last_mtl_idx is not None:
                     sell_signal[i] = True
+                    last_mtl_idx = None
+            if df.at[iloc, "mtl"]:
+                last_mtl_idx = i
+                if last_mth_idx is not None:
+                    buy_signal[i] = True
+                    last_mth_idx = None
 
         df["buy_signal"] = buy_signal
         df["sell_signal"] = sell_signal

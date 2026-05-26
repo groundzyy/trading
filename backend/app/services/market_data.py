@@ -1,3 +1,4 @@
+import asyncio
 import yfinance as yf
 import pandas as pd
 from datetime import date, timedelta
@@ -7,9 +8,13 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from ..models.stock import Stock, OHLCV
 
 
-async def fetch_ohlcv_from_provider(symbol: str, period: str = "1y") -> pd.DataFrame:
+def _fetch_yf_history(symbol: str, period: str) -> pd.DataFrame:
     ticker = yf.Ticker(symbol)
-    df = ticker.history(period=period, auto_adjust=True)
+    return ticker.history(period=period, auto_adjust=True)
+
+
+async def fetch_ohlcv_from_provider(symbol: str, period: str = "1y") -> pd.DataFrame:
+    df = await asyncio.to_thread(_fetch_yf_history, symbol, period)
     if df.empty:
         return df
     df = df.reset_index()
@@ -24,12 +29,17 @@ async def save_ohlcv(db: AsyncSession, df: pd.DataFrame):
     if df.empty:
         return
     records = df.to_dict("records")
-    for rec in records:
-        stmt = pg_insert(OHLCV).values(**rec).on_conflict_do_update(
-            index_elements=["symbol", "date"],
-            set_={k: rec[k] for k in ["open", "high", "low", "close", "volume"]},
-        )
-        await db.execute(stmt)
+    stmt = pg_insert(OHLCV).values(records).on_conflict_do_update(
+        index_elements=["symbol", "date"],
+        set_={
+            "open": pg_insert(OHLCV).excluded.open,
+            "high": pg_insert(OHLCV).excluded.high,
+            "low": pg_insert(OHLCV).excluded.low,
+            "close": pg_insert(OHLCV).excluded.close,
+            "volume": pg_insert(OHLCV).excluded.volume,
+        },
+    )
+    await db.execute(stmt)
     await db.commit()
 
 
@@ -62,7 +72,7 @@ async def ensure_stock(db: AsyncSession, symbol: str) -> Stock:
         return stock
 
     try:
-        info = yf.Ticker(symbol).info
+        info = await asyncio.to_thread(lambda: yf.Ticker(symbol).info)
         name = info.get("shortName", info.get("longName", symbol))
         exchange = info.get("exchange", "")
         sector = info.get("sector", "")
@@ -78,7 +88,7 @@ async def ensure_stock(db: AsyncSession, symbol: str) -> Stock:
 
 async def search_stocks(query: str) -> list[dict]:
     try:
-        results = yf.Tickers(query)
+        results = await asyncio.to_thread(lambda: yf.Tickers(query))
         return [{"symbol": t, "name": t} for t in results.tickers]
     except Exception:
         return [{"symbol": query.upper(), "name": query.upper()}]

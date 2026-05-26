@@ -21,14 +21,14 @@ const INDICATOR_LINES: Record<
   { key: string; color: string; label: string }[]
 > = {
   macd: [
-    { key: "macd", color: "#2196f3", label: "MACD" },
-    { key: "signal", color: "#e94560", label: "Signal" },
-    { key: "histogram", color: "#8a8a9a", label: "Hist" },
+    { key: "macd_dif", color: "#2196f3", label: "DIF" },
+    { key: "macd_dea", color: "#e94560", label: "DEA" },
+    { key: "macd_hist", color: "#8a8a9a", label: "Hist" },
   ],
   kdj: [
-    { key: "K", color: "#2196f3", label: "K" },
-    { key: "D", color: "#e94560", label: "D" },
-    { key: "J", color: "#f0b90b", label: "J" },
+    { key: "kdj_k", color: "#2196f3", label: "K" },
+    { key: "kdj_d", color: "#e94560", label: "D" },
+    { key: "kdj_j", color: "#f0b90b", label: "J" },
   ],
   rsi: [{ key: "rsi", color: "#9c27b0", label: "RSI" }],
 };
