@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import date, timedelta
 from ..database import get_db
-from ..services.market_data import fetch_ohlcv_from_provider, save_ohlcv, get_ohlcv, ensure_stock
+from ..services.market_data import fetch_ohlcv_from_provider, save_ohlcv, get_ohlcv, ensure_stock, validate_symbol
 from ..services.auth import get_current_user
 from ..models.user import User
 
@@ -12,6 +12,19 @@ router = APIRouter(prefix="/api/stocks", tags=["stocks"])
 RANGE_MAP = {
     "1M": 30, "3M": 90, "6M": 180, "1Y": 365, "5Y": 1825, "Max": 3650,
 }
+
+
+@router.get("/{symbol}/validate")
+async def validate_stock(
+    symbol: str,
+    db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    symbol = symbol.upper()
+    valid = await validate_symbol(db, symbol)
+    if not valid:
+        raise HTTPException(status_code=404, detail=f"Symbol '{symbol}' not found")
+    return {"symbol": symbol, "valid": True}
 
 
 @router.get("/{symbol}/ohlcv")

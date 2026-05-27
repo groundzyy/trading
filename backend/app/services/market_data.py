@@ -14,7 +14,10 @@ def _fetch_yf_history(symbol: str, period: str) -> pd.DataFrame:
 
 
 async def fetch_ohlcv_from_provider(symbol: str, period: str = "1y") -> pd.DataFrame:
-    df = await asyncio.to_thread(_fetch_yf_history, symbol, period)
+    try:
+        df = await asyncio.to_thread(_fetch_yf_history, symbol, period)
+    except Exception:
+        return pd.DataFrame()
     if df.empty:
         return df
     df = df.reset_index()
@@ -84,6 +87,25 @@ async def ensure_stock(db: AsyncSession, symbol: str) -> Stock:
     await db.commit()
     await db.refresh(stock)
     return stock
+
+
+async def validate_symbol(db: AsyncSession, symbol: str) -> bool:
+    result = await db.execute(select(Stock).where(Stock.symbol == symbol))
+    stock = result.scalar_one_or_none()
+    if stock and stock.name != stock.symbol:
+        return True
+
+    ohlcv_result = await db.execute(
+        select(OHLCV).where(OHLCV.symbol == symbol).limit(1)
+    )
+    if ohlcv_result.scalar_one_or_none():
+        return True
+
+    try:
+        provider_df = await fetch_ohlcv_from_provider(symbol, period="5d")
+        return not provider_df.empty
+    except Exception:
+        return False
 
 
 async def search_stocks(query: str) -> list[dict]:

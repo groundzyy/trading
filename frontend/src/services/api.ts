@@ -61,6 +61,13 @@ export async function getMe(): Promise<User> {
 }
 
 // Stocks
+export async function validateSymbol(
+  symbol: string
+): Promise<{ symbol: string; valid: boolean }> {
+  const res = await api.get(`/stocks/${symbol}/validate`);
+  return res.data;
+}
+
 export async function getOHLCV(
   symbol: string,
   range: string = "1Y"

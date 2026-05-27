@@ -6,6 +6,7 @@ import {
   addToWatchlist,
   removeFromWatchlist,
   getDecision,
+  validateSymbol,
 } from "@/services/api";
 
 // Default methods to use if a watchlist item has none configured
@@ -80,14 +81,19 @@ export default function Dashboard() {
     setAddError("");
     setAddingSymbol(true);
     try {
+      await validateSymbol(sym);
       await addToWatchlist(sym);
       setAddSymbol("");
       const items = await fetchWatchlist();
       await fetchDecisions(items);
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
-        const axErr = err as { response?: { data?: { detail?: string } } };
-        setAddError(axErr.response?.data?.detail || "Failed to add");
+        const axErr = err as { response?: { status?: number; data?: { detail?: string } } };
+        if (axErr.response?.status === 404) {
+          setAddError(`Symbol "${sym}" not found`);
+        } else {
+          setAddError(axErr.response?.data?.detail || "Failed to add");
+        }
       } else {
         setAddError("Failed to add");
       }

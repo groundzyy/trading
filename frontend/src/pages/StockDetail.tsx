@@ -11,6 +11,7 @@ import {
   getStockInfo,
   getIndicator,
   getMethods,
+  validateSymbol,
 } from "@/services/api";
 
 const RANGES = ["1M", "3M", "6M", "1Y", "5Y"] as const;
@@ -60,6 +61,7 @@ export default function StockDetail() {
     Record<string, IndicatorDataRow[]>
   >({});
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   // Fetch available methods once
   useEffect(() => {
@@ -71,7 +73,15 @@ export default function StockDetail() {
   const fetchData = useCallback(async () => {
     if (!upperSymbol) return;
     setLoading(true);
+    setNotFound(false);
     try {
+      try {
+        await validateSymbol(upperSymbol);
+      } catch {
+        setNotFound(true);
+        return;
+      }
+
       const [ohlcvRes, swingRes, infoRes] = await Promise.allSettled([
         getOHLCV(upperSymbol, range),
         getSwingPoints(upperSymbol, range),
@@ -159,42 +169,57 @@ export default function StockDetail() {
             </span>
           )}
         </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 28, fontWeight: 700 }}>
-            ${price.toFixed(2)}
+        {!notFound && lastCandle && (
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 28, fontWeight: 700 }}>
+              ${price.toFixed(2)}
+            </div>
+            <div
+              style={{
+                color: isPositive ? "#16c784" : "#e94560",
+                fontSize: 16,
+                fontWeight: 600,
+              }}
+            >
+              {isPositive ? "+" : ""}
+              {change.toFixed(2)} ({isPositive ? "+" : ""}
+              {changePct.toFixed(2)}%)
+            </div>
           </div>
-          <div
-            style={{
-              color: isPositive ? "#16c784" : "#e94560",
-              fontSize: 16,
-              fontWeight: 600,
-            }}
-          >
-            {isPositive ? "+" : ""}
-            {change.toFixed(2)} ({isPositive ? "+" : ""}
-            {changePct.toFixed(2)}%)
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Range Selector */}
-      <div style={rangeSelectorStyle}>
-        {RANGES.map((r) => (
-          <button
-            key={r}
-            onClick={() => setRange(r)}
-            style={{
-              ...rangeBtnStyle,
-              background: range === r ? "#0f3460" : "transparent",
-              color: range === r ? "#fff" : "#8a8a9a",
-            }}
-          >
-            {r}
-          </button>
-        ))}
-      </div>
+      {!notFound && (
+        <div style={rangeSelectorStyle}>
+          {RANGES.map((r) => (
+            <button
+              key={r}
+              onClick={() => setRange(r)}
+              style={{
+                ...rangeBtnStyle,
+                background: range === r ? "#0f3460" : "transparent",
+                color: range === r ? "#fff" : "#8a8a9a",
+              }}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {loading ? (
+      {notFound ? (
+        <div style={notFoundStyle}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>?</div>
+          <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>
+            Symbol Not Found
+          </h2>
+          <p style={{ color: "#8a8a9a", fontSize: 14 }}>
+            &quot;{upperSymbol}&quot; is not a valid stock symbol or has no
+            available data.
+          </p>
+        </div>
+      ) : loading ? (
         <div style={{ color: "#8a8a9a", textAlign: "center", padding: 60 }}>
           Loading data for {upperSymbol}...
         </div>
@@ -366,6 +391,14 @@ const signalBarStyle: React.CSSProperties = {
   marginBottom: 16,
   display: "flex",
   alignItems: "center",
+};
+
+const notFoundStyle: React.CSSProperties = {
+  textAlign: "center",
+  padding: "80px 20px",
+  background: "#16213e",
+  borderRadius: 8,
+  border: "1px solid #0f3460",
 };
 
 const swingListStyle: React.CSSProperties = {
