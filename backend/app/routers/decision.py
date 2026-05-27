@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from datetime import date, timedelta
 from ..database import get_db
 from ..services.market_data import get_ohlcv, ensure_stock, fetch_ohlcv_from_provider, save_ohlcv
@@ -8,7 +9,9 @@ from ..services.signal_engine import compute_swing_structure, compute_all_indica
 from ..services.decision_engine import compute_decision
 from ..services.auth import get_current_user
 from ..models.user import User
+from ..models.sentiment import SentimentAnalysis
 from ..signals.registry import get_method
+from ..signals.base import Signal
 
 router = APIRouter(prefix="/api/decision", tags=["decision"])
 
@@ -55,7 +58,29 @@ async def get_decision(
     method_params = {m.id: m.params for m in req.methods if m.params}
     weights = {m.id: m.weight for m in req.methods if m.id != "swing_structure"}
 
-    indicator_signals = compute_all_indicators(df, method_ids, method_params)
+    indicator_signals = compute_all_indicators(df, [m for m in method_ids if m != "sentiment"], method_params)
+
+    if "sentiment" in [m.id for m in req.methods]:
+        cached_sentiment = await db.execute(
+            select(SentimentAnalysis)
+            .where(SentimentAnalysis.symbol == symbol)
+            .order_by(SentimentAnalysis.created_at.desc())
+            .limit(1)
+        )
+        cached = cached_sentiment.scalar_one_or_none()
+        if cached:
+            indicator_signals["sentiment"] = Signal(
+                value=cached.signal_value * cached.confidence,
+                label=cached.label,
+                details={
+                    "reasoning": cached.reasoning,
+                    "factors": cached.factors,
+                    "confidence": cached.confidence,
+                    "model": cached.model_used,
+                    "analyzed_at": str(cached.created_at),
+                },
+            )
+
     result = compute_decision(symbol, primary_signal, indicator_signals, weights)
 
     primary_details = dict(result.primary_signal.details) if result.primary_signal and result.primary_signal.details else {}

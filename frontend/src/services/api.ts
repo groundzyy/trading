@@ -7,6 +7,7 @@ import type {
   ScannerResult,
   User,
   IndicatorMethod,
+  SentimentAnalysis,
 } from "@/types";
 
 const api = axios.create({
@@ -163,6 +164,19 @@ export async function scanSignals(
   const params: Record<string, string | number> = { days };
   if (signalType) params.signal_type = signalType;
   const res = await api.get("/scanner", { params });
+  return res.data;
+}
+
+// Sentiment
+export async function getSentiment(symbol: string): Promise<SentimentAnalysis> {
+  const res = await api.get(`/sentiment/${symbol}`);
+  return res.data;
+}
+
+export async function triggerSentimentAnalysis(
+  symbol: string
+): Promise<SentimentAnalysis> {
+  const res = await api.post(`/sentiment/${symbol}/analyze`);
   return res.data;
 }
 

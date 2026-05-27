@@ -71,3 +71,22 @@ export interface ScannerResult {
   composite_score: number;
   trigger_price: number;
 }
+
+export interface SentimentFactor {
+  name: string;
+  score: number;
+  note: string;
+}
+
+export interface SentimentAnalysis {
+  symbol: string;
+  available: boolean;
+  signal_value?: number;
+  label?: string;
+  confidence?: number;
+  reasoning?: string;
+  factors?: SentimentFactor[];
+  model_used?: string;
+  analyzed_at?: string;
+  cached?: boolean;
+}

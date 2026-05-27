@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import type { Candle, SwingPoint, DecisionResult, IndicatorMethod } from "@/types";
+import type { Candle, SwingPoint, DecisionResult, IndicatorMethod, SentimentAnalysis } from "@/types";
 import CandlestickChart from "@/components/CandlestickChart";
 import IndicatorPanel from "@/components/IndicatorPanel";
 import DecisionMatrix from "@/components/DecisionMatrix";
+import SentimentPanel from "@/components/SentimentPanel";
 import {
   getOHLCV,
   getSwingPoints,
@@ -12,6 +13,8 @@ import {
   getIndicator,
   getMethods,
   validateSymbol,
+  getSentiment,
+  triggerSentimentAnalysis,
 } from "@/services/api";
 
 const RANGES = ["1M", "3M", "6M", "1Y", "5Y"] as const;
@@ -62,6 +65,8 @@ export default function StockDetail() {
   >({});
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [sentiment, setSentiment] = useState<SentimentAnalysis | null>(null);
+  const [sentimentLoading, setSentimentLoading] = useState(false);
 
   // Fetch available methods once
   useEffect(() => {
@@ -99,13 +104,19 @@ export default function StockDetail() {
         setStockInfo(infoRes.value);
       }
 
+      // Fetch sentiment analysis (non-blocking)
+      getSentiment(upperSymbol)
+        .then((res) => setSentiment(res))
+        .catch(() => {});
+
       // Fetch decision with default methods
       try {
         const defaultMethods = [
-          { id: "swing_structure", weight: 0.4 },
-          { id: "macd", weight: 0.2 },
-          { id: "kdj", weight: 0.2 },
-          { id: "rsi", weight: 0.2 },
+          { id: "swing_structure", weight: 0.35 },
+          { id: "macd", weight: 0.15 },
+          { id: "kdj", weight: 0.15 },
+          { id: "rsi", weight: 0.15 },
+          { id: "sentiment", weight: 0.20 },
         ];
         const dec = await getDecision(upperSymbol, defaultMethods, range);
         setDecision(dec);
@@ -258,6 +269,24 @@ export default function StockDetail() {
               );
             })}
           </div>
+
+          {/* LLM Sentiment Analysis */}
+          <SentimentPanel
+            symbol={upperSymbol}
+            sentiment={sentiment}
+            loading={sentimentLoading}
+            onAnalyze={async () => {
+              setSentimentLoading(true);
+              try {
+                const result = await triggerSentimentAnalysis(upperSymbol);
+                setSentiment(result);
+              } catch {
+                // ignore
+              } finally {
+                setSentimentLoading(false);
+              }
+            }}
+          />
 
           {/* Swing Signal */}
           {swingSignal && (

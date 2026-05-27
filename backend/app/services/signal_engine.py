@@ -3,7 +3,7 @@ from ..signals.registry import get_method, SIGNAL_REGISTRY
 from ..signals.base import Signal
 
 # ensure all signal modules are imported so they register
-from ..signals import swing_structure, macd, rsi, ma, volume, kdj  # noqa: F401
+from ..signals import swing_structure, macd, rsi, ma, volume, kdj, sentiment  # noqa: F401
 
 
 def compute_swing_structure(ohlcv: pd.DataFrame) -> tuple[pd.DataFrame, list[dict]]:

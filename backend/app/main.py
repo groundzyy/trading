@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import auth, stocks, signals, decision, watchlist, scanner
+from .routers import auth, stocks, signals, decision, watchlist, scanner, sentiment
 from .database import engine, Base
 
 app = FastAPI(title="Trading Signal API", version="0.1.0")
@@ -26,6 +26,7 @@ app.include_router(signals.router)
 app.include_router(decision.router)
 app.include_router(watchlist.router)
 app.include_router(scanner.router)
+app.include_router(sentiment.router)
 
 
 @app.get("/api/health")

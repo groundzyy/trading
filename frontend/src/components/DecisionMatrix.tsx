@@ -166,6 +166,23 @@ const DecisionMatrix: React.FC<DecisionMatrixProps> = ({
               >
                 <td style={{ ...cellStyle, textAlign: "left", fontWeight: 500 }}>
                   {ind.id}
+                  {ind.id === "sentiment" && (
+                    <span
+                      style={{
+                        marginLeft: 6,
+                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        color: "#fff",
+                        fontSize: 9,
+                        fontWeight: 700,
+                        padding: "1px 4px",
+                        borderRadius: 3,
+                        letterSpacing: "0.05em",
+                        verticalAlign: "middle",
+                      }}
+                    >
+                      AI
+                    </span>
+                  )}
                 </td>
                 <td style={{ ...cellStyle, textAlign: "center" }}>
                   <div
