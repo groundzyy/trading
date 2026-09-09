@@ -25,7 +25,8 @@ services:
       TRADING_DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/trading
       TRADING_DATABASE_URL_SYNC: postgresql+psycopg2://postgres:postgres@db:5432/trading
       TRADING_REDIS_URL: redis://redis:6379/0
-      TRADING_SECRET_KEY: change-me-in-production
+      TRADING_SECRET_KEY: ${TRADING_SECRET_KEY:-change-me-in-production}
+      TRADING_ANTHROPIC_API_KEY: ${TRADING_ANTHROPIC_API_KEY:-}
     depends_on:
       - db
       - redis
@@ -39,6 +40,7 @@ services:
       TRADING_DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/trading
       TRADING_DATABASE_URL_SYNC: postgresql+psycopg2://postgres:postgres@db:5432/trading
       TRADING_REDIS_URL: redis://redis:6379/0
+      TRADING_ANTHROPIC_API_KEY: ${TRADING_ANTHROPIC_API_KEY:-}
     depends_on:
       - db
       - redis
@@ -48,7 +50,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:80"
+      - "${FRONTEND_PORT:-3001}:80"
     depends_on:
       - backend
 

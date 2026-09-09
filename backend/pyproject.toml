@@ -14,6 +14,10 @@ dependencies = [
     "pydantic-settings>=2.0.0",
     "python-jose[cryptography]>=3.3.0",
     "passlib[bcrypt]>=1.7.4",
+    # passlib 1.7.4 cannot drive bcrypt 5.x: every hash raises a bogus
+    # "password cannot be longer than 72 bytes" and all logins fail. 4.x only
+    # logs a trapped __about__ warning and works.
+    "bcrypt<5",
     "yfinance>=0.2.40",
     "pandas>=2.2.0",
     "numpy>=1.26.0",
