@@ -36,6 +36,22 @@ Guidelines:
 - The final score should reflect a weighted view of all factors"""
 
 
+# Per-million-token (input, output) rates, matched against the model id by substring.
+MODEL_PRICING = {
+    "haiku": (1.0, 5.0),
+    "sonnet": (2.0, 10.0),
+    "opus": (5.0, 25.0),
+}
+
+
+def estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
+    rate_in, rate_out = next(
+        (rates for key, rates in MODEL_PRICING.items() if key in model),
+        MODEL_PRICING["sonnet"],
+    )
+    return round(input_tokens / 1e6 * rate_in + output_tokens / 1e6 * rate_out, 6)
+
+
 @dataclass
 class SentimentResult:
     score: float

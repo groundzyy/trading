@@ -17,8 +17,8 @@ class Settings(BaseSettings):
 
     # LLM sentiment analysis
     anthropic_api_key: str = ""
-    sentiment_model_batch: str = "claude-haiku-4-5-20241022"
-    sentiment_model_deep: str = "claude-sonnet-4-20250514"
+    sentiment_model_batch: str = "claude-haiku-4-5"
+    sentiment_model_deep: str = "claude-sonnet-5"
     sentiment_max_daily_calls: int = 50
     sentiment_cache_hours: int = 24
     finnhub_api_key: str = ""

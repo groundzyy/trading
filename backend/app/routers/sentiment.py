@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from ..database import get_db
 from ..models.sentiment import SentimentAnalysis
 from ..services.auth import get_current_user
+from ..services.llm_sentiment import estimate_cost
 from ..models.user import User
 
 router = APIRouter(prefix="/api/sentiment", tags=["sentiment"])
@@ -126,7 +127,7 @@ async def trigger_analysis(
             model_used=result.model_used,
             input_tokens=result.input_tokens,
             output_tokens=result.output_tokens,
-            cost_usd=_estimate_cost(result.model_used, result.input_tokens, result.output_tokens),
+            cost_usd=estimate_cost(result.model_used, result.input_tokens, result.output_tokens),
         )
 
         from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -180,11 +181,3 @@ async def trigger_analysis(
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 
-def _estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
-    if "haiku" in model:
-        return (input_tokens * 0.25 + output_tokens * 1.25) / 1_000_000
-    elif "sonnet" in model:
-        return (input_tokens * 3.0 + output_tokens * 15.0) / 1_000_000
-    elif "opus" in model:
-        return (input_tokens * 15.0 + output_tokens * 75.0) / 1_000_000
-    return 0.0
