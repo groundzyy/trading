@@ -243,7 +243,7 @@ def run_daily_scan():
                         date=date.today(),
                         signal_type=decision.decision,
                         primary_trigger="swing_structure",
-                        trigger_price=df.iloc[-1]["close"],
+                        trigger_price=float(df.iloc[-1]["close"]),
                         composite_score=decision.composite_score,
                         indicator_scores={
                             r["id"]: r["signal"] for r in decision.indicator_results
